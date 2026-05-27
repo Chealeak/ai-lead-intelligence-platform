@@ -33,4 +33,13 @@ WordPress → Symfony API → Node AI Orchestrator → RAG → HubSpot
 
 
 ## Local setup
-docker compose up
+
+From the `infra/` directory:
+
+```bash
+cd infra
+docker compose up --build -d
+docker compose exec backend composer install
+```
+
+API: http://localhost:8080/

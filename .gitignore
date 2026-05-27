@@ -33,6 +33,8 @@ temp/
 # Docker (local overrides; keep committed compose files)
 docker-compose.override.yml
 docker-compose.*.local.yml
+infra/docker-compose.override.yml
+infra/docker-compose.*.local.yml
 .docker/
 
 # Symfony (services/backend)
