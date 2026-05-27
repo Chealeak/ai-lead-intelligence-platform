@@ -1,0 +1,132 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.*.example
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# IDE / editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Logs & temp
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# Docker (local overrides; keep committed compose files)
+docker-compose.override.yml
+docker-compose.*.local.yml
+.docker/
+
+# Symfony (services/backend)
+services/backend/vendor/
+services/backend/var/
+services/backend/.phpunit.cache/
+services/backend/.phpunit.result.cache
+services/backend/phpunit.xml
+services/backend/public/bundles/
+services/backend/config/secrets/prod/prod.decrypt.private.php
+services/backend/config/secrets/*/prod.decrypt.private.php
+
+# Node.js (services/ai-orchestrator, frontend-widget, root)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+.yarn/
+dist/
+build/
+.next/
+.nuxt/
+.output/
+*.tsbuildinfo
+.eslintcache
+coverage/
+.nyc_output/
+
+# Python (optional AI / RAG tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Databases & local data stores
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
+postgres-data/
+redis-data/
+
+# Generated embeddings & vector indexes (keep directory structure)
+data/embeddings/*
+!data/embeddings/.gitkeep
+*.index
+*.faiss
+
+# Build & deploy artifacts
+*.tar
+*.tar.gz
+*.zip
+*.jar
+*.war
+*.phar
+.php-cs-fixer.cache
+
+# Terraform / cloud (infra/cloud)
+infra/cloud/**/.terraform/
+infra/cloud/**/*.tfstate
+infra/cloud/**/*.tfstate.*
+infra/cloud/**/*.tfvars
+!infra/cloud/**/*.tfvars.example
+infra/cloud/**/crash.log
+infra/cloud/**/override.tf
+infra/cloud/**/override.tf.json
+
+# Secrets & keys (never commit)
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+.secrets/
+
+# Test & report output
+.phpunit.result.cache
+test-results/
+playwright-report/
+playwright/.cache/
