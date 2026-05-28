@@ -15,6 +15,9 @@ services:
 
     working_dir: /var/www/html
 
+    depends_on:
+      - postgres
+
   nginx:
     image: nginx:alpine
 
@@ -29,3 +32,22 @@ services:
 
     depends_on:
       - backend
+
+  postgres:
+    image: postgres:17
+
+    container_name: ai-platform-postgres
+
+    environment:
+      POSTGRES_DB: ai_platform
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

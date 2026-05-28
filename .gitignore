@@ -38,6 +38,8 @@ infra/docker-compose.*.local.yml
 .docker/
 
 # Symfony (services/backend)
+!services/backend/.env
+services/backend/.env.local
 services/backend/vendor/
 services/backend/var/
 services/backend/.phpunit.cache/
