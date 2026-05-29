@@ -26,6 +26,15 @@ class Lead
     #[ORM\Column(length: 50)]
     private ?string $status = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $aiIntent = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $aiComplexity = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $aiEstimatedCost = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -75,6 +84,42 @@ class Lead
     public function setStatus(string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getAiIntent(): ?string
+    {
+        return $this->aiIntent;
+    }
+
+    public function setAiIntent(?string $aiIntent): static
+    {
+        $this->aiIntent = $aiIntent;
+
+        return $this;
+    }
+
+    public function getAiComplexity(): ?string
+    {
+        return $this->aiComplexity;
+    }
+
+    public function setAiComplexity(?string $aiComplexity): static
+    {
+        $this->aiComplexity = $aiComplexity;
+
+        return $this;
+    }
+
+    public function getAiEstimatedCost(): ?string
+    {
+        return $this->aiEstimatedCost;
+    }
+
+    public function setAiEstimatedCost(?string $aiEstimatedCost): static
+    {
+        $this->aiEstimatedCost = $aiEstimatedCost;
 
         return $this;
     }
