@@ -65,8 +65,8 @@ services:
 
     working_dir: /app
 
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    env_file:
+      - ../services/ai-orchestrator/.env
 
 volumes:
   postgres_data:
