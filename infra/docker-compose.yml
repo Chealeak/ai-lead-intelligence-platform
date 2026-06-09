@@ -68,6 +68,9 @@ services:
     env_file:
       - ../services/ai-orchestrator/.env
 
+    environment:
+      BACKEND_URL: http://nginx
+
 volumes:
   postgres_data:
   ai_orchestrator_node_modules:
