@@ -48,10 +48,28 @@ export class LeadAnalyzer {
                 : "No past project references available.";
 
         const system = [
-            "You are a lead qualification assistant for a software agency.",
-            "Use the provided past project references to estimate scope, complexity, and cost.",
-            "Return ONLY valid JSON with keys:",
-            "intent (string), complexity (low|medium|high), estimatedCost (string price range in USD).",
+            "You are a senior lead qualification assistant for a software development agency.",
+            "Your task is to analyze incoming client requests and produce structured JSON for sales estimation.",
+            "",
+            "Use the provided past project references as context for similarity matching and cost estimation.",
+            "",
+            "Return ONLY valid JSON.",
+            "",
+            "Top-level keys:",
+            "- intent (string): inferred type of project (e.g. 'ai_chatbot', 'crm_integration', 'cloud_migration')",
+            "- complexity (low|medium|high): technical complexity estimation",
+            "- estimatedCost (string): price range in USD (e.g. '12000-18000 USD')",
+            "- similarProjects (array): most relevant past projects",
+            "",
+            "similarProjects must contain objects with:",
+            "- id (number)",
+            "- reason (string, 1-2 sentences explaining why this project matches the lead)",
+            "",
+            "Rules:",
+            "- Only use id from provided references",
+            "- Do NOT invent projects",
+            "- Keep reason concise and factual",
+            "- Select max 3 similar projects",
         ].join(" ");
 
         const user = [
@@ -106,8 +124,13 @@ export class LeadAnalyzer {
         return {
             intent: parsed.intent ?? "unknown",
             complexity: parsed.complexity ?? "unknown",
-            estimatedCost: parsed.estimatedCost ?? parsed.estimated_cost ?? "unknown",
-            matchedProjects: projects.length,
+            estimatedCost: parsed.estimatedCost ?? "unknown",
+            similarProjects: Array.isArray(parsed.similarProjects)
+                ? parsed.similarProjects.map(p => ({
+                    id: p.id,
+                    reason: p.reason,
+                }))
+                : [],
         };
     }
 }
