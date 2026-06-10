@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Widget — Embed Demo</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 45%, #f1f5f9 100%);
+            font-family: system-ui, sans-serif;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        .page-note {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        pre {
+            margin: 24px 0 0;
+            padding: 16px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <p class="page-note">This page loads the widget from the embed script service.</p>
+        <div id="ai-lead-widget"></div>
+        <pre>&lt;div id="ai-lead-widget"&gt;&lt;/div&gt;
+&lt;script
+  async
+  src="http://localhost:3001/embed.js"
+  data-lead-widget
+  data-api-url="{{API_URL}}"
+  data-target="ai-lead-widget"
+&gt;&lt;/script&gt;</pre>
+    </div>
+
+    <script
+        async
+        src="/embed.js"
+        data-lead-widget
+        data-api-url="{{API_URL}}"
+        data-target="ai-lead-widget"
+    ></script>
+</body>
+</html>
