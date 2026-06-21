@@ -1,4 +1,6 @@
 import { ProjectReferenceService } from "./ProjectReferenceService.js";
+import { AnalysisResultSchema } from "@ai-lead-intelligence/shared/contracts/lead.schema.js";
+import { normalizeAnalysisResult } from "@ai-lead-intelligence/shared/utils";
 
 function parseLlmJson(content) {
     if (!content || typeof content !== "string") {
@@ -121,16 +123,6 @@ export class LeadAnalyzer {
         const content = data.choices?.[0]?.message?.content;
         const parsed = parseLlmJson(content);
 
-        return {
-            intent: parsed.intent ?? "unknown",
-            complexity: parsed.complexity ?? "unknown",
-            estimatedCost: parsed.estimatedCost ?? "unknown",
-            similarProjects: Array.isArray(parsed.similarProjects)
-                ? parsed.similarProjects.map(p => ({
-                    id: p.id,
-                    reason: p.reason,
-                }))
-                : [],
-        };
+        return AnalysisResultSchema.parse(normalizeAnalysisResult(parsed));
     }
 }

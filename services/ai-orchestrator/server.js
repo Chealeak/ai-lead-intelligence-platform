@@ -1,5 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
+import { AnalyzeRequestSchema } from "@ai-lead-intelligence/shared/contracts/lead.schema.js";
+import { safeParse } from "@ai-lead-intelligence/shared/utils";
 import { LeadAnalyzer } from "./src/LeadAnalyzer.js";
 
 dotenv.config();
@@ -10,14 +12,14 @@ const leadAnalyzer = new LeadAnalyzer();
 app.use(express.json());
 
 app.post("/analyze", async (req, res) => {
-    const { message } = req.body ?? {};
+    const parsedRequest = safeParse(AnalyzeRequestSchema, req.body ?? {});
 
-    if (!message) {
-        return res.status(400).json({ error: "message is required" });
+    if (!parsedRequest.success) {
+        return res.status(400).json({ error: parsedRequest.message });
     }
 
     try {
-        const result = await leadAnalyzer.analyze(message);
+        const result = await leadAnalyzer.analyze(parsedRequest.data.message);
         return res.json(result);
     } catch (error) {
         if (error.message === "OPENROUTER_API_KEY is not configured") {

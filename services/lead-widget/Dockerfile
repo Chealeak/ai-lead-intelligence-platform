@@ -1,11 +1,12 @@
 FROM node:22-bookworm-slim
 
-WORKDIR /app
+WORKDIR /repo/services/lead-widget
 
-COPY package.json package-lock.json ./
+COPY shared /repo/shared
+COPY services/lead-widget/package.json services/lead-widget/package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY . .
+COPY services/lead-widget .
 
 EXPOSE 3001
 

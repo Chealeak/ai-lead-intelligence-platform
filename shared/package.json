@@ -1,0 +1,18 @@
+{
+  "name": "@ai-lead-intelligence/shared",
+  "version": "1.0.0",
+  "description": "Shared contracts, types, and utilities for AI Lead Intelligence Platform",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./contracts/lead.schema": "./contracts/lead.schema.js",
+    "./contracts/lead.schema.js": "./contracts/lead.schema.js",
+    "./types": "./types/index.js",
+    "./utils": "./utils/index.js",
+    "./utils/index.js": "./utils/index.js"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}

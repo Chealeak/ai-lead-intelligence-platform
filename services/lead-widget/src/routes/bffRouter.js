@@ -1,39 +1,35 @@
 import { Router } from "express";
-
-function transformLeadResponse(data) {
-    return {
-        success: true,
-        analysis: {
-            intent: data.ai?.intent ?? null,
-            complexity: data.ai?.complexity ?? null,
-            estimatedCost: data.ai?.estimatedCost ?? null,
-            projects: data.ai?.similarProjects ?? [],
-        },
-    };
-}
+import {
+    BackendLeadResponseSchema,
+    LeadCreateRequestSchema,
+} from "@ai-lead-intelligence/shared/contracts/lead.schema.js";
+import {
+    safeParse,
+    toBffErrorResponse,
+    toBffLeadResponse,
+} from "@ai-lead-intelligence/shared/utils";
 
 export function createBffRouter({ backendUrl }) {
     const router = Router();
     const baseUrl = backendUrl.replace(/\/$/, "");
 
     router.post("/api/leads", async (req, res) => {
-        const { email, company, message } = req.body ?? {};
+        const parsedRequest = safeParse(LeadCreateRequestSchema, req.body ?? {});
 
-        if (!email?.trim() || !message?.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "email and message are required",
-            });
+        if (!parsedRequest.success) {
+            return res.status(400).json(toBffErrorResponse(parsedRequest.message));
         }
+
+        const { email, company, message } = parsedRequest.data;
 
         try {
             const response = await fetch(`${baseUrl}/api/leads`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    email: email.trim(),
-                    company: company?.trim() || null,
-                    message: message.trim(),
+                    email,
+                    company: company ?? null,
+                    message,
                 }),
                 signal: AbortSignal.timeout(65000),
             });
@@ -41,27 +37,34 @@ export function createBffRouter({ backendUrl }) {
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
-                return res.status(response.status).json({
-                    success: false,
-                    message: data.message || data.error || "Failed to analyze your request.",
-                });
+                return res.status(response.status).json(
+                    toBffErrorResponse(
+                        data.message || data.error || "Failed to analyze your request."
+                    )
+                );
             }
 
-            return res.status(response.status).json(transformLeadResponse(data));
+            const parsedBackend = safeParse(BackendLeadResponseSchema, data);
+
+            if (!parsedBackend.success) {
+                console.error("Unexpected backend response:", parsedBackend.message, data);
+
+                return res.status(502).json(
+                    toBffErrorResponse("Unexpected response from backend service.")
+                );
+            }
+
+            return res.status(response.status).json(toBffLeadResponse(parsedBackend.data));
         } catch (error) {
             if (error.name === "TimeoutError") {
-                return res.status(504).json({
-                    success: false,
-                    message: "Analysis timed out. Please try again.",
-                });
+                return res.status(504).json(
+                    toBffErrorResponse("Analysis timed out. Please try again.")
+                );
             }
 
             console.error("BFF lead proxy failed:", error);
 
-            return res.status(502).json({
-                success: false,
-                message: "Backend service unavailable",
-            });
+            return res.status(502).json(toBffErrorResponse("Backend service unavailable"));
         }
     });
 

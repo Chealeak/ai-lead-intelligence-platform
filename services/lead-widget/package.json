@@ -8,6 +8,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@ai-lead-intelligence/shared": "file:../../shared",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }

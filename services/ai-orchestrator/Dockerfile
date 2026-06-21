@@ -1,11 +1,12 @@
 FROM node:22-bookworm-slim
 
-WORKDIR /app
+WORKDIR /repo/services/ai-orchestrator
 
-COPY package.json package-lock.json ./
+COPY shared /repo/shared
+COPY services/ai-orchestrator/package.json services/ai-orchestrator/package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY . .
+COPY services/ai-orchestrator .
 
 EXPOSE 3000
 
