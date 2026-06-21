@@ -204,15 +204,31 @@
         return document.querySelector(`script[${SCRIPT_MARKER}], script[src*="embed.js"]`);
     }
 
+    function getServiceUrl(script) {
+        const override = script?.getAttribute("data-api-url");
+        if (override) {
+            return override.replace(/\/$/, "");
+        }
+
+        const src = script?.getAttribute("src");
+        if (src) {
+            try {
+                return new URL(src, window.location.href).origin;
+            } catch {
+                // fall through
+            }
+        }
+
+        return window.location.origin;
+    }
+
     function readScriptConfig(script) {
         if (!script) {
             return null;
         }
 
-        const apiUrl = script.getAttribute("data-api-url");
-
         return {
-            apiUrl: apiUrl ? apiUrl.replace(/\/$/, "") : "",
+            apiUrl: getServiceUrl(script),
             targetId: script.getAttribute("data-target") || "ai-lead-widget",
         };
     }
@@ -387,7 +403,7 @@
                 this.statusArea.hidden = true;
 
                 const body = this.shadow.querySelector(".widget-body");
-                body.insertAdjacentHTML("beforeend", renderResults(data.ai || {}));
+                body.insertAdjacentHTML("beforeend", renderResults(data.analysis || {}));
             } catch {
                 this.setStatus("error", "Network error. Please check your connection and try again.");
             } finally {
@@ -399,11 +415,6 @@
     function mount(config) {
         const targetId = config.targetId || config.target || "ai-lead-widget";
         const apiUrl = (config.apiUrl || "").replace(/\/$/, "");
-
-        if (!apiUrl) {
-            console.error("[LeadWidget] data-api-url is required on the embed script tag.");
-            return null;
-        }
 
         const target =
             typeof config.container === "string"

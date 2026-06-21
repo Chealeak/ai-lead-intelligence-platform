@@ -88,7 +88,8 @@ services:
 
     environment:
       PORT: 3001
-      API_URL: http://localhost:8080
+      BACKEND_URL: http://nginx
+      WIDGET_URL: http://localhost:3001
 
 volumes:
   postgres_data:
