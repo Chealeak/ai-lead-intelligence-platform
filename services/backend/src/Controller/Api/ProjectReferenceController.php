@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\ProjectReference;
 use App\Repository\ProjectReferenceRepository;
+use App\Service\ProjectReferenceRagService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +17,8 @@ final class ProjectReferenceController extends AbstractController
     #[Route('/api/project-references', methods: ['POST'])]
     public function create(
         Request $request,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        ProjectReferenceRagService $ragService,
     ): JsonResponse {
         $data = json_decode($request->getContent(), true) ?? [];
 
@@ -40,10 +42,42 @@ final class ProjectReferenceController extends AbstractController
         $em->persist($reference);
         $em->flush();
 
+        $ragService->embedReferenceSafely($reference);
+
         return $this->json(
             $this->serialize($reference),
             Response::HTTP_CREATED
         );
+    }
+
+    #[Route('/api/project-references/search', methods: ['POST'])]
+    public function search(Request $request, ProjectReferenceRagService $ragService): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+        $query = trim((string) ($data['query'] ?? ''));
+
+        if ($query === '') {
+            return $this->json(
+                ['error' => 'query is required'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        $limit = isset($data['limit']) ? max(1, min(20, (int) $data['limit'])) : 5;
+
+        try {
+            $references = $ragService->findSimilar($query, $limit);
+        } catch (\RuntimeException $exception) {
+            return $this->json(
+                ['error' => $exception->getMessage()],
+                Response::HTTP_BAD_GATEWAY
+            );
+        }
+
+        return $this->json(array_map(
+            fn (ProjectReference $reference) => $this->serialize($reference),
+            $references
+        ));
     }
 
     #[Route('/api/project-references', methods: ['GET'])]

@@ -16,28 +16,53 @@ class ProjectReferenceRepository extends ServiceEntityRepository
         parent::__construct($registry, ProjectReference::class);
     }
 
-    //    /**
-    //     * @return ProjectReference[] Returns an array of ProjectReference objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findSimilarByEmbedding(array $embedding, int $limit = 5): array
+    {
+        $vector = '['.implode(',', array_map(
+            static fn (float $value): string => rtrim(rtrim(sprintf('%.8F', $value), '0'), '.'),
+            $embedding
+        )).']';
 
-    //    public function findOneBySomeField($value): ?ProjectReference
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $connection = $this->getEntityManager()->getConnection();
+        $rows = $connection->fetchAllAssociative(
+            'SELECT id
+             FROM project_reference
+             WHERE embedding IS NOT NULL
+             ORDER BY embedding <=> :embedding::vector
+             LIMIT :limit',
+            [
+                'embedding' => $vector,
+                'limit' => $limit,
+            ],
+            [
+                'limit' => \Doctrine\DBAL\ParameterType::INTEGER,
+            ]
+        );
+
+        if ($rows === []) {
+            return [];
+        }
+
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], $rows);
+
+        $references = $this->createQueryBuilder('p')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        $indexed = [];
+        foreach ($references as $reference) {
+            $indexed[$reference->getId()] = $reference;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($indexed[$id])) {
+                $ordered[] = $indexed[$id];
+            }
+        }
+
+        return $ordered;
+    }
 }

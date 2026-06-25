@@ -53,7 +53,7 @@ export class LeadAnalyzer {
             "You are a senior lead qualification assistant for a software development agency.",
             "Your task is to analyze incoming client requests and produce structured JSON for sales estimation.",
             "",
-            "Use the provided past project references as context for similarity matching and cost estimation.",
+            "Use the provided past project references (retrieved by semantic similarity) as context for similarity matching and cost estimation.",
             "",
             "Return ONLY valid JSON.",
             "",
@@ -85,12 +85,25 @@ export class LeadAnalyzer {
         return { system, user };
     }
 
+    async fetchRelevantProjects(message) {
+        try {
+            const similar = await this.projectReferenceService.searchSimilar(message, 5);
+            if (similar.length > 0) {
+                return similar;
+            }
+        } catch (error) {
+            console.warn("RAG search failed, falling back to all project references:", error.message);
+        }
+
+        return this.projectReferenceService.getProjects();
+    }
+
     async analyze(message) {
         if (!this.apiKey) {
             throw new Error("OPENROUTER_API_KEY is not configured");
         }
 
-        const projects = await this.projectReferenceService.getProjects();
+        const projects = await this.fetchRelevantProjects(message);
         const { system, user } = this.buildPrompt(message, projects);
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
