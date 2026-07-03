@@ -8,6 +8,8 @@
     ".": "./index.js",
     "./contracts/lead.schema": "./contracts/lead.schema.js",
     "./contracts/lead.schema.js": "./contracts/lead.schema.js",
+    "./contracts/conversation.schema": "./contracts/conversation.schema.js",
+    "./contracts/conversation.schema.js": "./contracts/conversation.schema.js",
     "./types": "./types/index.js",
     "./utils": "./utils/index.js",
     "./utils/index.js": "./utils/index.js"

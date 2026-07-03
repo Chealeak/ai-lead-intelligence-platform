@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createBffRouter } from "./src/routes/bffRouter.js";
+import { createConversationRouter } from "./src/routes/conversationRouter.js";
 
 dotenv.config();
 
@@ -22,12 +23,13 @@ app.use((_req, res, next) => {
     next();
 });
 
-app.options("/api/leads", (_req, res) => {
+app.options(["/api/leads", "/api/conversations", "/api/conversations/:id/messages"], (_req, res) => {
     res.sendStatus(204);
 });
 
 app.use(express.json());
 app.use(createBffRouter({ backendUrl }));
+app.use(createConversationRouter({ backendUrl }));
 
 app.get("/embed.js", (_req, res) => {
     res.setHeader("Content-Type", "application/javascript; charset=utf-8");

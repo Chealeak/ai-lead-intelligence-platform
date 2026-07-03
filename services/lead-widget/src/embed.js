@@ -1,6 +1,8 @@
 (function (window, document) {
     "use strict";
 
+    const STORAGE_KEY = "ai-lead-conversation-id";
+
     const STYLES = `
         :host {
             display: block;
@@ -9,12 +11,13 @@
             line-height: 1.5;
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         .widget {
             max-width: 520px;
+            height: 640px;
+            display: flex;
+            flex-direction: column;
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
@@ -23,192 +26,205 @@
         }
 
         .widget-header {
-            padding: 24px 24px 0;
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #f8fafc, #ffffff);
         }
 
         .widget-header h2 {
-            margin: 0 0 8px;
-            font-size: 1.35rem;
+            margin: 0 0 4px;
+            font-size: 1.2rem;
             font-weight: 700;
-            letter-spacing: -0.02em;
         }
 
         .widget-header p {
             margin: 0;
             color: #64748b;
-            font-size: 0.95rem;
-        }
-
-        .widget-body {
-            padding: 24px;
-        }
-
-        .field {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
             font-size: 0.875rem;
-            font-weight: 600;
-            color: #334155;
         }
 
-        input, textarea {
+        .lead-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .lead-fields input {
             width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        .chat-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8fafc;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.92rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background: #4f46e5;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-assistant {
+            align-self: flex-start;
+            background: #fff;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .estimate-card {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            font-size: 0.85rem;
+        }
+
+        .estimate-card strong { display: block; margin-bottom: 4px; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #c7d2fe;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background: #e0e7ff;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .composer {
+            padding: 14px 16px 16px;
+            border-top: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .composer-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .composer textarea {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
             padding: 10px 12px;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
+            border-radius: 12px;
             font: inherit;
+            resize: none;
             background: #f8fafc;
-            transition: border-color 0.15s, box-shadow 0.15s;
         }
 
-        input:focus, textarea:focus {
+        .composer textarea:focus {
             outline: none;
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
             background: #fff;
         }
 
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .submit-btn {
-            width: 100%;
-            margin-top: 8px;
-            padding: 12px 16px;
+        .send-btn {
+            padding: 10px 16px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             background: linear-gradient(135deg, #4f46e5, #6366f1);
             color: #fff;
             font: inherit;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.15s, transform 0.1s;
         }
 
-        .submit-btn:hover:not(:disabled) {
-            opacity: 0.95;
-        }
-
-        .submit-btn:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-
-        .submit-btn:disabled {
+        .send-btn:disabled {
             opacity: 0.65;
             cursor: not-allowed;
         }
 
-        .status {
-            margin-top: 16px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-        }
-
-        .status-error {
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .status-loading {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
+        .loading {
+            align-self: flex-start;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.875rem;
         }
 
         .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid #93c5fd;
-            border-top-color: #1d4ed8;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #4f46e5;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            flex-shrink: 0;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .results {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .results h3 {
-            margin: 0 0 14px;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .metrics {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
+        .error-banner {
+            margin: 0 16px 8px;
             padding: 10px 12px;
-            background: #f8fafc;
             border-radius: 10px;
-            font-size: 0.9rem;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            font-size: 0.85rem;
         }
-
-        .metric-label {
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .metric-value {
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: capitalize;
-        }
-
-        .badge-low { background: #dcfce7; color: #166534; }
-        .badge-medium { background: #fef9c3; color: #854d0e; }
-        .badge-high { background: #fee2e2; color: #991b1b; }
-        .badge-unknown { background: #e2e8f0; color: #475569; }
     `;
 
     const SCRIPT_MARKER = "data-lead-widget";
 
     function findEmbedScript() {
-        if (document.currentScript) {
-            return document.currentScript;
-        }
-
+        if (document.currentScript) return document.currentScript;
         return document.querySelector(`script[${SCRIPT_MARKER}], script[src*="embed.js"]`);
     }
 
     function getServiceUrl(script) {
         const override = script?.getAttribute("data-api-url");
-        if (override) {
-            return override.replace(/\/$/, "");
-        }
+        if (override) return override.replace(/\/$/, "");
 
         const src = script?.getAttribute("src");
         if (src) {
@@ -223,29 +239,12 @@
     }
 
     function readScriptConfig(script) {
-        if (!script) {
-            return null;
-        }
+        if (!script) return null;
 
         return {
             apiUrl: getServiceUrl(script),
             targetId: script.getAttribute("data-target") || "ai-lead-widget",
         };
-    }
-
-    function complexityBadgeClass(complexity) {
-        const value = (complexity || "unknown").toLowerCase();
-        if (value === "low" || value === "medium" || value === "high") {
-            return `badge badge-${value}`;
-        }
-        return "badge badge-unknown";
-    }
-
-    function formatIntent(intent) {
-        if (!intent || intent === "unknown") {
-            return "Unknown";
-        }
-        return intent.replace(/_/g, " ");
     }
 
     function escapeHtml(value) {
@@ -256,37 +255,43 @@
             .replace(/"/g, "&quot;");
     }
 
-    function renderResults(ai) {
+    function renderEstimateCard(assistant) {
+        if (!assistant.estimatedCost && !assistant.complexity) return "";
+
         return `
-            <div class="results">
-                <h3>AI Analysis</h3>
-                <div class="metrics">
-                    <div class="metric">
-                        <span class="metric-label">Intent</span>
-                        <span class="metric-value">${escapeHtml(formatIntent(ai.intent))}</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Complexity</span>
-                        <span class="metric-value">
-                            <span class="${complexityBadgeClass(ai.complexity)}">${escapeHtml(ai.complexity || "unknown")}</span>
-                        </span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Estimated cost</span>
-                        <span class="metric-value">${escapeHtml(ai.estimatedCost || "Unknown")}</span>
-                    </div>
-                </div>
+            <div class="estimate-card">
+                ${assistant.estimatedCost ? `<strong>Estimated cost: ${escapeHtml(assistant.estimatedCost)}</strong>` : ""}
+                ${assistant.complexity ? `<span>Complexity: ${escapeHtml(assistant.complexity)}</span>` : ""}
             </div>
         `;
+    }
+
+    function renderActions(actions, disabled) {
+        if (!Array.isArray(actions) || actions.length === 0) return "";
+
+        const buttons = actions
+            .map(
+                (action) =>
+                    `<button type="button" class="action-btn" data-action="${escapeHtml(action.action)}" ${disabled ? "disabled" : ""}>${escapeHtml(action.label)}</button>`
+            )
+            .join("");
+
+        return `<div class="actions">${buttons}</div>`;
     }
 
     class LeadWidget {
         constructor(container, apiUrl) {
             this.container = container;
             this.apiUrl = apiUrl;
+            this.conversationId = window.localStorage.getItem(STORAGE_KEY);
+            this.loading = false;
+            this.messages = [];
+            this.suggestedActions = [];
+
             this.shadow = container.attachShadow({ mode: "open" });
             this.render();
             this.bindEvents();
+            this.bootstrap();
         }
 
         render() {
@@ -297,117 +302,218 @@
             wrapper.className = "widget";
             wrapper.innerHTML = `
                 <div class="widget-header">
-                    <h2>Project inquiry</h2>
-                    <p>Describe your project and get an instant AI-powered estimate.</p>
+                    <h2>AI Sales Assistant</h2>
+                    <p>Describe your project and get estimates, proposals, and next steps.</p>
+                    <div class="lead-fields">
+                        <input id="email" type="email" placeholder="Email (for proposals)" autocomplete="email" />
+                        <input id="company" type="text" placeholder="Company (optional)" autocomplete="organization" />
+                    </div>
                 </div>
-                <div class="widget-body">
-                    <form class="lead-form" novalidate>
-                        <div class="field">
-                            <label for="email">Email</label>
-                            <input id="email" name="email" type="email" required placeholder="you@company.com" autocomplete="email" />
-                        </div>
-                        <div class="field">
-                            <label for="company">Company <span style="font-weight:400;color:#94a3b8">(optional)</span></label>
-                            <input id="company" name="company" type="text" placeholder="Acme Inc." autocomplete="organization" />
-                        </div>
-                        <div class="field">
-                            <label for="message">Project details</label>
-                            <textarea id="message" name="message" required placeholder="Tell us what you want to build, timeline, and any constraints..."></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">Analyze request</button>
-                    </form>
-                    <div class="status-area" hidden></div>
+                <div class="error-area" hidden></div>
+                <div class="chat-log" aria-live="polite"></div>
+                <div class="composer">
+                    <div class="composer-row">
+                        <textarea id="message" rows="1" placeholder="Type your message..."></textarea>
+                        <button type="button" class="send-btn">Send</button>
+                    </div>
                 </div>
             `;
 
             this.shadow.appendChild(style);
             this.shadow.appendChild(wrapper);
 
-            this.form = this.shadow.querySelector(".lead-form");
-            this.submitBtn = this.shadow.querySelector(".submit-btn");
-            this.statusArea = this.shadow.querySelector(".status-area");
+            this.chatLog = this.shadow.querySelector(".chat-log");
+            this.messageInput = this.shadow.querySelector("#message");
+            this.sendBtn = this.shadow.querySelector(".send-btn");
+            this.errorArea = this.shadow.querySelector(".error-area");
+            this.emailInput = this.shadow.querySelector("#email");
+            this.companyInput = this.shadow.querySelector("#company");
         }
 
         bindEvents() {
-            this.form.addEventListener("submit", (event) => {
-                event.preventDefault();
-                this.submit();
+            this.sendBtn.addEventListener("click", () => this.sendMessage());
+            this.messageInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    this.sendMessage();
+                }
+            });
+
+            this.chatLog.addEventListener("click", (event) => {
+                const button = event.target.closest("[data-action]");
+                if (!button || this.loading) return;
+
+                const action = button.getAttribute("data-action");
+                const label = button.textContent.trim();
+                this.sendMessage(label, action);
             });
         }
 
-        setStatus(type, message) {
-            this.statusArea.hidden = false;
-            this.statusArea.className = "status-area";
+        async bootstrap() {
+            if (this.conversationId) {
+                try {
+                    await this.loadConversation(this.conversationId);
+                    return;
+                } catch {
+                    window.localStorage.removeItem(STORAGE_KEY);
+                }
+            }
 
-            if (type === "loading") {
-                this.statusArea.innerHTML = `
-                    <div class="status status-loading">
-                        <span class="spinner" aria-hidden="true"></span>
-                        <span>${escapeHtml(message)}</span>
-                    </div>
-                `;
+            await this.startConversation();
+        }
+
+        setError(message) {
+            if (!message) {
+                this.errorArea.hidden = true;
+                this.errorArea.textContent = "";
                 return;
             }
 
-            if (type === "error") {
-                this.statusArea.innerHTML = `<div class="status status-error">${escapeHtml(message)}</div>`;
-            }
+            this.errorArea.hidden = false;
+            this.errorArea.className = "error-banner";
+            this.errorArea.textContent = message;
         }
 
-        clearResults() {
-            const existing = this.shadow.querySelector(".results");
-            if (existing) {
+        setLoading(isLoading) {
+            this.loading = isLoading;
+            this.sendBtn.disabled = isLoading;
+            this.messageInput.disabled = isLoading;
+
+            const existing = this.shadow.querySelector(".loading-indicator");
+            if (isLoading && !existing) {
+                this.chatLog.insertAdjacentHTML(
+                    "beforeend",
+                    `<div class="loading loading-indicator"><span class="spinner"></span><span>Assistant is thinking...</span></div>`
+                );
+                this.scrollToBottom();
+            } else if (!isLoading && existing) {
                 existing.remove();
             }
         }
 
-        async submit() {
-            const email = this.shadow.querySelector("#email").value.trim();
-            const company = this.shadow.querySelector("#company").value.trim();
-            const message = this.shadow.querySelector("#message").value.trim();
+        scrollToBottom() {
+            this.chatLog.scrollTop = this.chatLog.scrollHeight;
+        }
 
-            if (!email) {
-                this.setStatus("error", "Please enter your email address.");
-                return;
-            }
+        renderMessages() {
+            this.chatLog.innerHTML = this.messages
+                .map((message) => {
+                    const roleClass =
+                        message.role === "user" ? "message-user" : "message-assistant";
+                    const estimate =
+                        message.role === "assistant" && message.metadata
+                            ? renderEstimateCard(message.metadata)
+                            : "";
+                    const actions =
+                        message.role === "assistant" && message.showActions
+                            ? renderActions(this.suggestedActions, this.loading)
+                            : "";
 
-            if (!message) {
-                this.setStatus("error", "Please describe your project.");
-                return;
-            }
+                    return `<div class="message ${roleClass}">${escapeHtml(message.content)}${estimate}${actions}</div>`;
+                })
+                .join("");
 
-            this.submitBtn.disabled = true;
-            this.clearResults();
-            this.setStatus("loading", "Analyzing your request — this may take up to a minute...");
+            this.scrollToBottom();
+        }
+
+        applyConversationPayload(data) {
+            this.conversationId = data.conversationId;
+            window.localStorage.setItem(STORAGE_KEY, String(this.conversationId));
+
+            if (data.email) this.emailInput.value = data.email;
+            if (data.company) this.companyInput.value = data.company;
+
+            this.messages = (data.messages || []).map((message, index, array) => ({
+                role: message.role,
+                content: message.content,
+                metadata: message.metadata || null,
+                showActions:
+                    message.role === "assistant" &&
+                    index === array.length - 1 &&
+                    Array.isArray(data.assistant?.suggestedActions) &&
+                    data.assistant.suggestedActions.length > 0,
+            }));
+
+            this.suggestedActions = data.assistant?.suggestedActions || [];
+            this.renderMessages();
+        }
+
+        async startConversation() {
+            this.setLoading(true);
+            this.setError(null);
 
             try {
-                const response = await fetch(`${this.apiUrl}/api/leads`, {
+                const response = await fetch(`${this.apiUrl}/api/conversations`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email,
-                        company: company || null,
-                        message,
-                    }),
+                    body: JSON.stringify({}),
                 });
 
                 const data = await response.json().catch(() => ({}));
 
-                if (!response.ok) {
-                    const errorMessage =
-                        data.message || data.error || "Failed to analyze your request. Please try again.";
-                    this.setStatus("error", errorMessage);
-                    return;
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Failed to start conversation.");
                 }
 
-                this.statusArea.hidden = true;
-
-                const body = this.shadow.querySelector(".widget-body");
-                body.insertAdjacentHTML("beforeend", renderResults(data.analysis || {}));
-            } catch {
-                this.setStatus("error", "Network error. Please check your connection and try again.");
+                this.applyConversationPayload(data);
+            } catch (error) {
+                this.setError(error.message || "Unable to start conversation.");
             } finally {
-                this.submitBtn.disabled = false;
+                this.setLoading(false);
+            }
+        }
+
+        async loadConversation(conversationId) {
+            const response = await fetch(`${this.apiUrl}/api/conversations/${conversationId}`);
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "Conversation not found.");
+            }
+
+            this.applyConversationPayload(data);
+        }
+
+        async sendMessage(overrideMessage, action) {
+            const message = (overrideMessage || this.messageInput.value).trim();
+
+            if (!message || this.loading || !this.conversationId) return;
+
+            this.messageInput.value = "";
+            this.setError(null);
+
+            this.messages.push({ role: "user", content: message, metadata: null, showActions: false });
+            this.renderMessages();
+            this.setLoading(true);
+
+            try {
+                const payload = {
+                    message,
+                    action: action || null,
+                    email: this.emailInput.value.trim() || null,
+                    company: this.companyInput.value.trim() || null,
+                };
+
+                const response = await fetch(
+                    `${this.apiUrl}/api/conversations/${this.conversationId}/messages`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    }
+                );
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Failed to send message.");
+                }
+
+                this.applyConversationPayload(data);
+            } catch (error) {
+                this.setError(error.message || "Network error. Please try again.");
+            } finally {
+                this.setLoading(false);
             }
         }
     }
@@ -442,9 +548,7 @@
         const scriptConfig = readScriptConfig(script);
         const config = window.LeadWidgetConfig || scriptConfig;
 
-        if (!config) {
-            return;
-        }
+        if (!config) return;
 
         mount(config);
     }
