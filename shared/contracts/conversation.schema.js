@@ -34,6 +34,7 @@ export const NextActionSchema = z.enum([
 ]);
 
 export const ConversationMessageRoleSchema = z.enum(["user", "assistant"]);
+export const ConversationPublicIdSchema = z.string().uuid();
 
 export const ConversationHistoryMessageSchema = z.object({
     role: ConversationMessageRoleSchema,
@@ -108,7 +109,7 @@ export const ConversationMessageResponseSchema = z.object({
 });
 
 export const BackendConversationResponseSchema = z.object({
-    conversationId: z.number(),
+    conversationId: ConversationPublicIdSchema,
     state: z.string(),
     email: z.string().nullable(),
     company: z.string().nullable(),
@@ -118,7 +119,7 @@ export const BackendConversationResponseSchema = z.object({
 
 export const BffConversationSuccessResponseSchema = z.object({
     success: z.literal(true),
-    conversationId: z.number(),
+    conversationId: ConversationPublicIdSchema,
     state: z.string(),
     email: z.string().nullable().optional(),
     company: z.string().nullable().optional(),

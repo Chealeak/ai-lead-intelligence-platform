@@ -1,4 +1,6 @@
 {
+    "name": "ai-lead-intelligence/backend",
+    "description": "Symfony backend for the AI Lead Intelligence Platform",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
@@ -10,15 +12,16 @@
         "doctrine/doctrine-bundle": "^3.2",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.6",
+        "dompdf/dompdf": "^3.1",
         "symfony/console": "8.0.*",
         "symfony/dotenv": "8.0.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "8.0.*",
         "symfony/http-client": "8.0.*",
         "symfony/mailer": "8.0.*",
+        "symfony/rate-limiter": "8.0.*",
         "symfony/runtime": "8.0.*",
-        "symfony/yaml": "8.0.*",
-        "dompdf/dompdf": "^3.1"
+        "symfony/yaml": "8.0.*"
     },
     "config": {
         "allow-plugins": {
@@ -52,6 +55,7 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
+        "test": "php tests/security-smoke.php",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"

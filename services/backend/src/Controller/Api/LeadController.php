@@ -3,7 +3,9 @@
 namespace App\Controller\Api;
 
 use App\Entity\Lead;
+use App\Service\ApiRateLimiter;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -17,9 +19,22 @@ final class LeadController extends AbstractController
     public function create(
         Request $request,
         EntityManagerInterface $em,
-        HttpClientInterface $httpClient
-    ): JsonResponse
-    {
+        HttpClientInterface $httpClient,
+        ApiRateLimiter $rateLimiter,
+        #[Autowire(env: 'INTERNAL_SERVICE_SECRET')]
+        string $internalServiceSecret,
+    ): JsonResponse {
+        if ($response = $rateLimiter->limitLeadAnalysis($request)) {
+            return $response;
+        }
+
+        if ($internalServiceSecret === '') {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Service configuration error',
+            ], JsonResponse::HTTP_SERVICE_UNAVAILABLE);
+        }
+
         $data = json_decode($request->getContent(), true) ?? [];
 
         $lead = new Lead();
@@ -33,6 +48,9 @@ final class LeadController extends AbstractController
                 'POST',
                 'http://ai-orchestrator:3000/analyze',
                 [
+                    'headers' => [
+                        'X-Internal-Service-Secret' => $internalServiceSecret,
+                    ],
                     'json' => [
                         'message' => $lead->getMessage(),
                     ],
@@ -46,7 +64,6 @@ final class LeadController extends AbstractController
                 return $this->json([
                     'status' => 'error',
                     'message' => 'AI analysis failed',
-                    'details' => $response->toArray(false),
                 ], JsonResponse::HTTP_BAD_GATEWAY);
             }
 

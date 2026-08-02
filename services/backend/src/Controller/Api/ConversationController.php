@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\Conversation;
 use App\Repository\ConversationRepository;
+use App\Service\ApiRateLimiter;
 use App\Service\ConversationManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,8 +15,15 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ConversationController extends AbstractController
 {
     #[Route('/api/conversations', methods: ['POST'])]
-    public function create(Request $request, ConversationManager $conversationManager): JsonResponse
-    {
+    public function create(
+        Request $request,
+        ConversationManager $conversationManager,
+        ApiRateLimiter $rateLimiter,
+    ): JsonResponse {
+        if ($response = $rateLimiter->limitConversationCreation($request)) {
+            return $response;
+        }
+
         $data = json_decode($request->getContent(), true) ?? [];
 
         $conversation = $conversationManager->create(
@@ -46,13 +54,13 @@ final class ConversationController extends AbstractController
         );
     }
 
-    #[Route('/api/conversations/{id}', methods: ['GET'], requirements: ['id' => '\d+'])]
+    #[Route('/api/conversations/{publicId}', methods: ['GET'], requirements: ['publicId' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}'])]
     public function show(
-        int $id,
+        string $publicId,
         ConversationRepository $repository,
         ConversationManager $conversationManager,
     ): JsonResponse {
-        $conversation = $repository->find($id);
+        $conversation = $repository->findOneByPublicId($publicId);
 
         if (!$conversation) {
             return $this->json(['error' => 'Conversation not found'], Response::HTTP_NOT_FOUND);
@@ -67,14 +75,19 @@ final class ConversationController extends AbstractController
         );
     }
 
-    #[Route('/api/conversations/{id}/messages', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[Route('/api/conversations/{publicId}/messages', methods: ['POST'], requirements: ['publicId' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}'])]
     public function sendMessage(
-        int $id,
+        string $publicId,
         Request $request,
         ConversationRepository $repository,
         ConversationManager $conversationManager,
+        ApiRateLimiter $rateLimiter,
     ): JsonResponse {
-        $conversation = $repository->find($id);
+        if ($response = $rateLimiter->limitConversationMessage($request, $publicId)) {
+            return $response;
+        }
+
+        $conversation = $repository->findOneByPublicId($publicId);
 
         if (!$conversation) {
             return $this->json(['error' => 'Conversation not found'], Response::HTTP_NOT_FOUND);
@@ -101,9 +114,9 @@ final class ConversationController extends AbstractController
                 $message,
                 isset($data['action']) ? (string) $data['action'] : null,
             );
-        } catch (\RuntimeException $exception) {
+        } catch (\RuntimeException) {
             return $this->json(
-                ['error' => $exception->getMessage()],
+                ['error' => 'Assistant service unavailable'],
                 Response::HTTP_BAD_GATEWAY
             );
         }
@@ -131,7 +144,7 @@ final class ConversationController extends AbstractController
         ?array $messages = null,
     ): array {
         return [
-            'conversationId' => $conversation->getId(),
+            'conversationId' => $conversation->getPublicId(),
             'state' => $conversation->getState(),
             'email' => $conversation->getEmail(),
             'company' => $conversation->getCompany(),

@@ -15,4 +15,9 @@ class ConversationRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Conversation::class);
     }
+
+    public function findOneByPublicId(string $publicId): ?Conversation
+    {
+        return $this->findOneBy(['publicId' => $publicId]);
+    }
 }

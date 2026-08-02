@@ -1,7 +1,7 @@
 (function (window, document) {
     "use strict";
 
-    const STORAGE_KEY = "ai-lead-conversation-id";
+    const STORAGE_KEY = "ai-lead-conversation-token-v2";
 
     const STYLES = `
         :host {
@@ -464,7 +464,9 @@
         }
 
         async loadConversation(conversationId) {
-            const response = await fetch(`${this.apiUrl}/api/conversations/${conversationId}`);
+            const response = await fetch(
+                `${this.apiUrl}/api/conversations/${encodeURIComponent(conversationId)}`
+            );
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok || !data.success) {
@@ -495,7 +497,7 @@
                 };
 
                 const response = await fetch(
-                    `${this.apiUrl}/api/conversations/${this.conversationId}/messages`,
+                    `${this.apiUrl}/api/conversations/${encodeURIComponent(this.conversationId)}/messages`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

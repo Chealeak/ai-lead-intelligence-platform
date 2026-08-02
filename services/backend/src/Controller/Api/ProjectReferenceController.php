@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\ProjectReference;
 use App\Repository\ProjectReferenceRepository;
+use App\Service\ApiSecurity;
 use App\Service\ProjectReferenceRagService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +20,16 @@ final class ProjectReferenceController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         ProjectReferenceRagService $ragService,
+        ApiSecurity $security,
     ): JsonResponse {
+        if (!$security->isAdmin($request)) {
+            return $this->json(
+                ['error' => 'Unauthorized'],
+                Response::HTTP_UNAUTHORIZED,
+                ['WWW-Authenticate' => 'Bearer']
+            );
+        }
+
         $data = json_decode($request->getContent(), true) ?? [];
 
         if (empty($data['name']) || empty($data['description'])) {
@@ -51,8 +61,15 @@ final class ProjectReferenceController extends AbstractController
     }
 
     #[Route('/api/project-references/search', methods: ['POST'])]
-    public function search(Request $request, ProjectReferenceRagService $ragService): JsonResponse
-    {
+    public function search(
+        Request $request,
+        ProjectReferenceRagService $ragService,
+        ApiSecurity $security,
+    ): JsonResponse {
+        if (!$security->isAdminOrInternalService($request)) {
+            return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
         $data = json_decode($request->getContent(), true) ?? [];
         $query = trim((string) ($data['query'] ?? ''));
 
@@ -67,9 +84,9 @@ final class ProjectReferenceController extends AbstractController
 
         try {
             $references = $ragService->findSimilar($query, $limit);
-        } catch (\RuntimeException $exception) {
+        } catch (\RuntimeException) {
             return $this->json(
-                ['error' => $exception->getMessage()],
+                ['error' => 'Reference search unavailable'],
                 Response::HTTP_BAD_GATEWAY
             );
         }
@@ -81,8 +98,15 @@ final class ProjectReferenceController extends AbstractController
     }
 
     #[Route('/api/project-references', methods: ['GET'])]
-    public function index(ProjectReferenceRepository $repository): JsonResponse
-    {
+    public function index(
+        Request $request,
+        ProjectReferenceRepository $repository,
+        ApiSecurity $security,
+    ): JsonResponse {
+        if (!$security->isAdminOrInternalService($request)) {
+            return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
         $references = $repository->findBy([], ['id' => 'ASC']);
 
         return $this->json(array_map(
@@ -92,8 +116,16 @@ final class ProjectReferenceController extends AbstractController
     }
 
     #[Route('/api/project-references/{id}', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(int $id, ProjectReferenceRepository $repository): JsonResponse
-    {
+    public function show(
+        int $id,
+        Request $request,
+        ProjectReferenceRepository $repository,
+        ApiSecurity $security,
+    ): JsonResponse {
+        if (!$security->isAdminOrInternalService($request)) {
+            return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
         $reference = $repository->find($id);
 
         if (!$reference) {

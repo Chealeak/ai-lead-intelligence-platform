@@ -9,7 +9,7 @@ import {
     toBffLeadResponse,
 } from "@ai-lead-intelligence/shared/utils";
 
-export function createBffRouter({ backendUrl }) {
+export function createBffRouter({ backendUrl, internalServiceSecret = "" }) {
     const router = Router();
     const baseUrl = backendUrl.replace(/\/$/, "");
 
@@ -25,7 +25,15 @@ export function createBffRouter({ backendUrl }) {
         try {
             const response = await fetch(`${baseUrl}/api/leads`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(internalServiceSecret
+                        ? {
+                              "X-Internal-Service-Secret": internalServiceSecret,
+                              "X-Widget-Client-Ip": req.ip,
+                          }
+                        : {}),
+                },
                 body: JSON.stringify({
                     email,
                     company: company ?? null,
@@ -37,6 +45,9 @@ export function createBffRouter({ backendUrl }) {
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
+                if (response.headers.has("retry-after")) {
+                    res.set("Retry-After", response.headers.get("retry-after"));
+                }
                 return res.status(response.status).json(
                     toBffErrorResponse(
                         data.message || data.error || "Failed to analyze your request."

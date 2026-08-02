@@ -17,6 +17,9 @@ class Conversation
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(length: 36, unique: true)]
+    private string $publicId;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $email = null;
 
@@ -43,6 +46,18 @@ class Conversation
 
     public function __construct()
     {
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        $hex = bin2hex($bytes);
+        $this->publicId = sprintf(
+            '%s-%s-%s-%s-%s',
+            substr($hex, 0, 8),
+            substr($hex, 8, 4),
+            substr($hex, 12, 4),
+            substr($hex, 16, 4),
+            substr($hex, 20)
+        );
         $this->messages = new ArrayCollection();
     }
 
@@ -63,6 +78,11 @@ class Conversation
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getPublicId(): string
+    {
+        return $this->publicId;
     }
 
     public function getEmail(): ?string

@@ -1,6 +1,6 @@
 doctrine_migrations:
     migrations_paths:
-        # namespace is arbitrary but should be different from App\Migrations
-        # as migrations classes should NOT be autoloaded
+        # Migration classes should not be application-autoloaded.
         'DoctrineMigrations': '%kernel.project_dir%/migrations'
+        'DoctrineMigrations\Security': '%kernel.project_dir%/security-migrations'
     enable_profiler: false

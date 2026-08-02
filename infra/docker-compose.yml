@@ -15,11 +15,13 @@ services:
 
     working_dir: /var/www/html
 
-    env_file:
-      - ../services/ai-orchestrator/.env
-
     environment:
-      DATABASE_URL: postgresql://app:secret@postgres:5432/ai_platform?serverVersion=17&charset=utf8
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in infra/.env}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Set ADMIN_API_KEY in infra/.env}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in infra/.env}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      TRUSTED_PROXIES: private_ranges
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in infra/.env}@postgres:5432/${POSTGRES_DB:-ai_platform}?serverVersion=17&charset=utf8
       MAILER_DSN: null://null
       MAILER_FROM: assistant@example.com
 
@@ -48,12 +50,12 @@ services:
     container_name: ai-platform-postgres
 
     environment:
-      POSTGRES_DB: ai_platform
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB:-ai_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in infra/.env}
 
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -65,8 +67,8 @@ services:
 
     container_name: ai-orchestrator
 
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
 
     volumes:
       - ../services/ai-orchestrator:/repo/services/ai-orchestrator
@@ -75,11 +77,10 @@ services:
 
     working_dir: /repo/services/ai-orchestrator
 
-    env_file:
-      - ../services/ai-orchestrator/.env
-
     environment:
       BACKEND_URL: http://nginx
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in infra/.env}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
 
   lead-widget:
     build:
@@ -102,6 +103,7 @@ services:
       PORT: 3001
       BACKEND_URL: http://nginx
       WIDGET_URL: http://localhost:3001
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in infra/.env}
 
 volumes:
   postgres_data:

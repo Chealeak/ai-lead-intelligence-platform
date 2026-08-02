@@ -20,5 +20,12 @@ services:
     App\:
         resource: '../src/'
 
+    App\Service\ApiRateLimiter:
+        arguments:
+            $conversationCreateLimiter: '@limiter.conversation_create'
+            $conversationMessageIpLimiter: '@limiter.conversation_message_ip'
+            $conversationMessageLimiter: '@limiter.conversation_message'
+            $leadAnalysisLimiter: '@limiter.lead_analysis'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
